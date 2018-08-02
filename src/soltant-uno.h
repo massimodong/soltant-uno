@@ -22,12 +22,17 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <string.h>
+#include <ctype.h>
+#include <pthread.h>
 
 #define BUFFER_MAX_SIZE 2048
+#define CLIENT_BUFFER_MAX_SIZE 512
 #define WebSocket_GUID "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
 extern char *PROGRAM_NAME;
 extern int SERVER_PORT;
+
+#define MAX_GAMES 255
 
 /*
  * below are shared datatypes
@@ -41,6 +46,20 @@ struct HttpHeader{
 	 char *request_uri;
 	 char *method;
 	 struct Trie *fields;
+};
+
+struct WebSocket_Client{
+	int fd, bp;
+	char buff[CLIENT_BUFFER_MAX_SIZE];
+};
+
+struct Player{
+	struct WebSocket_Client wb_client;
+};
+
+struct Game{
+	struct Player *players;
+	size_t players_size, players_cnt;
 };
 
 /*
@@ -70,3 +89,9 @@ void websocket_work();
 //sol-string
 void string_to_lowercase(char *str);
 void string_trim_whitespaces(char *str);
+
+//game
+void init_free_gids();
+int start_game();
+void game_send_client_fd(int, int);
+int new_game();

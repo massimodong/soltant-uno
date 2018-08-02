@@ -18,7 +18,6 @@
  */
 
 #include "soltant-uno.h"
-#include <ctype.h>
 
 #define is_uppercase(c) ('A' <= (c) && (c) <= 'Z')
 

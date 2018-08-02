@@ -103,7 +103,7 @@ am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am_soltant_uno_OBJECTS = main.$(OBJEXT) websocket.$(OBJEXT) \
 	versions.$(OBJEXT) http.$(OBJEXT) trie.$(OBJEXT) \
-	sol-string.$(OBJEXT)
+	sol-string.$(OBJEXT) game.$(OBJEXT)
 soltant_uno_OBJECTS = $(am_soltant_uno_OBJECTS)
 soltant_uno_DEPENDENCIES =
 AM_V_lt = $(am__v_lt_@AM_V@)
@@ -306,7 +306,8 @@ soltant_uno_SOURCES = \
 	versions.c \
 	http.c \
 	trie.c \
-	sol-string.c
+	sol-string.c \
+	game.c
 
 soltant_uno_LDFLAGS = 
 soltant_uno_LDADD = 
@@ -403,6 +404,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/game.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/http.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sol-string.Po@am__quote@

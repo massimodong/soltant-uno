@@ -63,6 +63,14 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
+	init_free_gids();
+	int gid = new_game();
+	if(gid){
+		fprintf(stderr, "started game %d\n", gid);
+	}else{
+		fprintf(stderr, "start game failed\n");
+		exit(EXIT_FAILURE);
+	}
 	websocket_work();
 
 	return (0);

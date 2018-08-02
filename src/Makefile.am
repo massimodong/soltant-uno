@@ -20,7 +20,8 @@ soltant_uno_SOURCES = \
 	versions.c \
 	http.c \
 	trie.c \
-	sol-string.c
+	sol-string.c \
+	game.c
 
 soltant_uno_LDFLAGS = 
 

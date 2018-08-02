@@ -120,10 +120,12 @@ int handshake(int fd){
  * param:
  *   fd -- client socket file descriptor
  */
-void resolve_client(int fd){
-	handshake(fd);
+void *resolve_client(void *fdp){
+	int fd=*(int *)fdp;
+	int game_id = handshake(fd);
 	//todo
 	close(fd);
+	return NULL;
 }
 
 /*
@@ -155,8 +157,8 @@ void websocket_work(){
 
 	while(1){
 		client_socket = accept(web_socket, (struct sockaddr *)&addr, &addrlen);
-		resolve_client(client_socket);
-		break;
+		pthread_t ptid;
+		pthread_create(&ptid, NULL, resolve_client, &client_socket);
 	}
 	close(web_socket);
 }
