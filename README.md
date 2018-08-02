@@ -2,4 +2,4 @@
 An Uno game server over WebSocket protocol written in C  
 
 ### Current Progress
-working on the WebSocket protocol
+Implementing game server
