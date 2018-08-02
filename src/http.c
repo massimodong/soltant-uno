@@ -98,8 +98,6 @@ struct HttpHeader *newHttpHeader(char *str){
 		}
 		*value = '\0';
 		++value;
-		
-		fprintf(stderr, ">>%s--%s<<\n", name, value);
 
 		char *_mem = malloc(sizeof(char)*(strlen(value)+1));
 		strcpy(_mem, value);

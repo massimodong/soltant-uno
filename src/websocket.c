@@ -20,13 +20,53 @@
 #include "soltant-uno.h"
 #include <sys/socket.h>
 #include <netinet/in.h>
-
-/*
- * below are intended to be configurable
- */
-#define SERVER_PORT 1111
+#include <openssl/sha.h>
+#include <openssl/bio.h>
+#include <openssl/evp.h>
 
 char Buff[BUFFER_MAX_SIZE];
+
+/*
+ * base64 encode input binary string
+ * params:
+ *   value -- binary string to encode
+ *   len -- string length
+ * return:
+ *   a static pointer to the base64 encoded string
+ */
+char *base64_encode(unsigned char *value, unsigned int len){
+	static char *base64_value = NULL;
+	base64_value = realloc(base64_value, sizeof(char) * len * 2);
+	FILE *stream = fmemopen(base64_value, len * 2, "w");
+	BIO *b64 = BIO_new(BIO_f_base64()), *bio = BIO_new_fp(stream, BIO_NOCLOSE);
+	BIO_push(b64, bio);
+	BIO_write(b64, value, SHA_DIGEST_LENGTH);
+ 	BIO_flush(b64);
+ 	BIO_free_all(b64);
+	fclose(stream);
+	return base64_value;
+}
+
+/*
+ * produce `Sec-WebSocket-Accept` value
+ * param:
+ *   key -- Sec-Websocket-key value
+ * return:
+ *   valid `Sec-WebSocket-Accept`
+ */
+char *get_websocket_accept_value(char *key){
+	char *token = malloc(sizeof(char)*
+	                     (strlen(key) + strlen(WebSocket_GUID) + 1));
+	strcpy(token, key);
+
+	string_trim_whitespaces(token);
+	strcat(token, WebSocket_GUID);
+
+	unsigned char *sh = SHA1((unsigned char *)token, strlen(token), NULL);
+	free(token);
+
+	return base64_encode(sh, SHA_DIGEST_LENGTH);
+}
 
 /*
  * tackles handshake failure
@@ -56,7 +96,8 @@ int handshake(int fd){
 
 	struct HttpHeader *hh = newHttpHeader(Buff);
 
-	if(trie_query(hh->fields, "sec-websocket-key") != NULL){
+	char *socket_key = trie_query(hh->fields, "sec-websocket-key");
+	if(socket_key != NULL){
 		fprintf(stderr, "WebSocket!!\n");
 	}else{
 		fprintf(stderr, "Http!!\n");
@@ -65,9 +106,9 @@ int handshake(int fd){
 
 	sscanf(hh->request_uri, "/game/%d", &game_id);
 
-	fprintf(stderr, "game id: %d", game_id);
+	char *accept_value = get_websocket_accept_value(socket_key);
 
-	//todo
+	dprintf(fd, "HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: %s\r\n", accept_value);
 	
 	delHttpHeader(hh);
 	

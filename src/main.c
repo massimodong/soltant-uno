@@ -20,24 +20,13 @@
 #include "soltant-uno.h"
 #include <getopt.h>
 
-/*
- * convert all uppercase letters to lower case
- * param:
- *   str -- string to convert
- */
-void string_to_lowercase(char *str){
-	for(int i=0;str[i]!='\0';++i){
-		if(is_uppercase(str[i])){
-			str[i]=str[i]-'A'+'a';
-		}
-	}
-}
-
 char *PROGRAM_NAME;
+int SERVER_PORT = 11111;
 
 static const struct option longopts[] = {
 	{ "help", no_argument, NULL, 'h' },
 	{ "version", no_argument, NULL, 'v' },
+	{ "port", required_argument, NULL, 'p' },
 	{ NULL, 0, NULL, 0 },
 };
 
@@ -54,6 +43,9 @@ int main(int argc, char *argv[])
 			case 'h':
 				print_help();
 				exit(EXIT_SUCCESS);
+			case 'p':
+				SERVER_PORT = strtol(optarg, NULL, 0);
+				break;
 			default:
 				lose = 1;
 				break;

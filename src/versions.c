@@ -39,10 +39,11 @@ void print_help(){
 
 	puts("");
 	puts("\
-	-d, --debug           debug mode\n");
+	--debug           debug mode\n\
+	--port number     port number\n");
 
 	puts("");
 	puts("Report bugs to: dongmassimo@gmail.com\n\
-pkg home page: <>\n\
+pkg home page: <https://github.com/massimodong/soltant-uno>\n\
 General help using GNU software: <http://www.gnu.org/gethelp/>\n");
 }

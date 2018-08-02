@@ -19,7 +19,8 @@ soltant_uno_SOURCES = \
 	soltant-uno.h \
 	versions.c \
 	http.c \
-	trie.c
+	trie.c \
+	sol-string.c
 
 soltant_uno_LDFLAGS = 
 

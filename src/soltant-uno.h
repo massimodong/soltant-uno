@@ -23,10 +23,11 @@
 #include <unistd.h>
 #include <string.h>
 
-#define is_uppercase(c) ('A' <= (c) && (c) <= 'Z')
 #define BUFFER_MAX_SIZE 2048
+#define WebSocket_GUID "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
 extern char *PROGRAM_NAME;
+extern int SERVER_PORT;
 
 /*
  * below are shared datatypes
@@ -65,3 +66,7 @@ void delHttpHeader(struct HttpHeader *);
 
 // websocket
 void websocket_work();
+
+//sol-string
+void string_to_lowercase(char *str);
+void string_trim_whitespaces(char *str);
