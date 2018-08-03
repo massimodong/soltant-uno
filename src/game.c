@@ -19,7 +19,7 @@
 
 #include "soltant-uno.h"
 
-pid_t game_pids[MAX_GAMES + 1];
+int game_pipes[MAX_GAMES + 1];
 int free_gids[MAX_GAMES], free_gids_top;
 
 /*
@@ -33,11 +33,33 @@ void init_free_gids(){
 /*
  * run a game
  * param:
- *   gid -- game id
+ *   fdp -- commands file descriptor cast to void*
  */
-void run_game(int gid){
+void *run_game(void *fdp){
+	int fd = VOIDP2INT(fdp);
+	unsigned char *command_buff = malloc(sizeof(unsigned char) * COMMAND_SIZE);
 	struct Game *game = malloc(sizeof(struct Game));
 	memset(game, 0, sizeof(struct Game));
+
+	while(1){
+		read(fd, command_buff, sizeof(char) * COMMAND_SIZE);
+		int64_t command_name = *(int64_t *)command_buff;
+		unsigned char *command_par = command_buff + COMMAND_NAME_SIZE;
+
+#ifndef NDEBUG
+		fprintf(stderr, "command: %d\nparams:\n", (int)command_name);
+		for(int i=0;i<COMMAND_PAR_SIZE;++i){
+			fprintf(stderr, "%d: %d", i, (int)command_par[i]);
+			if(isprint(command_par[i])){
+				fprintf(stderr, " -- <%c>\n", command_par[i]);
+			}else{
+				fprintf(stderr, "\n");
+			}
+		}
+#endif
+	}
+
+	free(command_buff);
 	free(game);
 }
 
@@ -49,13 +71,15 @@ void run_game(int gid){
 int new_game(){
 	if(!free_gids_top) return 0;
 	int gid = free_gids[--free_gids_top];
-	pid_t pid = game_pids[gid] = fork();
-	if(pid){
-		return gid;
-	}else{
-		run_game(gid);
-		exit(EXIT_SUCCESS);
-	}
+
+	int pfd[2];
+	pipe(pfd);
+
+	game_pipes[gid] = pfd[1];
+	pthread_t ptid;
+	pthread_create(&ptid, NULL, run_game, INT2VOIDP(pfd[0]));
+
+	return gid;
 }
 
 /*
@@ -66,4 +90,8 @@ int new_game(){
  *   fd -- client socket file descriptor
  */
 void game_send_client_fd(int game_id, int fd){
+	unsigned char *buff = malloc(sizeof(char) * COMMAND_SIZE);
+	*(int64_t *)buff = 2334333;
+	strcpy((char *)(buff) + COMMAND_NAME_SIZE, "Test Data");
+	write(game_pipes[game_id], buff, COMMAND_SIZE);
 }

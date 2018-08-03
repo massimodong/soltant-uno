@@ -24,8 +24,6 @@
 #include <openssl/bio.h>
 #include <openssl/evp.h>
 
-char Buff[BUFFER_MAX_SIZE];
-
 /*
  * base64 encode input binary string
  * params:
@@ -85,16 +83,17 @@ void handshake_failure(int fd){
  *   game_id data in handshake header, -1 if in error
  */
 int handshake(int fd){
+	char *buff = malloc(sizeof(char) * BUFFER_MAX_SIZE);
 	int len, game_id = -1;
-	len = read(fd, Buff, BUFFER_MAX_SIZE);
-	Buff[len] = '\0';
+	len = read(fd, buff, BUFFER_MAX_SIZE);
+	buff[len] = '\0';
 	
 #ifndef NDEBUG
 	fprintf(stderr, "read len %d\n", len);
-	fprintf(stderr, "%s", Buff);
+	fprintf(stderr, "%s", buff);
 #endif
 
-	struct HttpHeader *hh = newHttpHeader(Buff);
+	struct HttpHeader *hh = newHttpHeader(buff);
 
 	char *socket_key = trie_query(hh->fields, "sec-websocket-key");
 	if(socket_key != NULL){
@@ -111,6 +110,10 @@ int handshake(int fd){
 	dprintf(fd, "HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: %s\r\n", accept_value);
 	
 	delHttpHeader(hh);
+
+#ifndef NDEBUG
+	fprintf(stderr, "Handshake complete with game id : %d\n", game_id);
+#endif
 	
 	return game_id;
 }
@@ -121,9 +124,9 @@ int handshake(int fd){
  *   fd -- client socket file descriptor
  */
 void *resolve_client(void *fdp){
-	int fd=*(int *)fdp;
+	int fd=VOIDP2INT(fdp);
 	int game_id = handshake(fd);
-	//todo
+	game_send_client_fd(game_id, fd);
 	close(fd);
 	return NULL;
 }
@@ -158,7 +161,7 @@ void websocket_work(){
 	while(1){
 		client_socket = accept(web_socket, (struct sockaddr *)&addr, &addrlen);
 		pthread_t ptid;
-		pthread_create(&ptid, NULL, resolve_client, &client_socket);
+		pthread_create(&ptid, NULL, resolve_client, INT2VOIDP(client_socket));
 	}
 	close(web_socket);
 }

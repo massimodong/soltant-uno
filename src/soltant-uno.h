@@ -18,6 +18,7 @@
  */
 
 #include <stdio.h>
+#include <stdint.h>
 #include <assert.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -29,8 +30,15 @@
 #define CLIENT_BUFFER_MAX_SIZE 512
 #define WebSocket_GUID "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
+#define COMMAND_SIZE 512
+#define COMMAND_NAME_SIZE 8
+#define COMMAND_PAR_SIZE COMMAND_SIZE - COMMAND_NAME_SIZE
+
 extern char *PROGRAM_NAME;
 extern int SERVER_PORT;
+
+#define INT2VOIDP(i) (void*)(uintptr_t)(i)
+#define VOIDP2INT(p) (int)(uintptr_t)(p)
 
 #define MAX_GAMES 255
 
