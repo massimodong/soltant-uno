@@ -110,12 +110,34 @@ int handshake(int fd){
 	dprintf(fd, "HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: %s\r\n", accept_value);
 	
 	delHttpHeader(hh);
+	free(buff);
 
 #ifndef NDEBUG
 	fprintf(stderr, "Handshake complete with game id : %d\n", game_id);
 #endif
 	
 	return game_id;
+}
+
+/*
+ * receive commands from client
+ * and send them to game
+ * params:
+ *   game_id -- game id
+ *   fd -- client file descriptor
+ */
+void transmit_commands(int game_id, int fd){
+	byte *msg_buff = malloc(sizeof(byte) * BUFFER_MAX_SIZE),
+		*command_buff = malloc(sizeof(byte) * BUFFER_MAX_SIZE);
+	int msg_buff_len = 0;
+	while(1){
+		int len;
+		websocket_receive_frame(fd, msg_buff, &msg_buff_len, command_buff, &len);
+#ifndef NDEBUG
+		fprintf(stderr, "received frame len %d\n", len);
+#endif
+		//todo
+	}
 }
 
 /*
@@ -127,6 +149,7 @@ void *resolve_client(void *fdp){
 	int fd=VOIDP2INT(fdp);
 	int game_id = handshake(fd);
 	game_send_client_fd(game_id, fd);
+	transmit_commands(game_id, fd);
 	close(fd);
 	return NULL;
 }

@@ -37,14 +37,14 @@ void init_free_gids(){
  */
 void *run_game(void *fdp){
 	int fd = VOIDP2INT(fdp);
-	unsigned char *command_buff = malloc(sizeof(unsigned char) * COMMAND_SIZE);
+	byte *command_buff = malloc(sizeof(byte) * COMMAND_SIZE);
 	struct Game *game = malloc(sizeof(struct Game));
 	memset(game, 0, sizeof(struct Game));
 
 	while(1){
 		read(fd, command_buff, sizeof(char) * COMMAND_SIZE);
 		int64_t command_name = *(int64_t *)command_buff;
-		unsigned char *command_par = command_buff + COMMAND_NAME_SIZE;
+		byte *command_par = command_buff + COMMAND_NAME_SIZE;
 
 #ifndef NDEBUG
 		fprintf(stderr, "command: %d\nparams:\n", (int)command_name);
@@ -90,7 +90,7 @@ int new_game(){
  *   fd -- client socket file descriptor
  */
 void game_send_client_fd(int game_id, int fd){
-	unsigned char *buff = malloc(sizeof(char) * COMMAND_SIZE);
+	byte *buff = malloc(sizeof(byte) * COMMAND_SIZE);
 	*(int64_t *)buff = 2334333;
 	strcpy((char *)(buff) + COMMAND_NAME_SIZE, "Test Data");
 	write(game_pipes[game_id], buff, COMMAND_SIZE);

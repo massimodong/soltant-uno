@@ -45,6 +45,8 @@ extern int SERVER_PORT;
 /*
  * below are shared datatypes
  */
+#define byte unsigned char
+
 struct Trie{
 	 struct Trie *go[1<<8];
 	 void *value;
@@ -103,3 +105,6 @@ void init_free_gids();
 int start_game();
 void game_send_client_fd(int, int);
 int new_game();
+
+//websocket-communicate
+void websocket_receive_frame(int, byte *, int *, byte *, int *);
