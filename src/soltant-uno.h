@@ -103,8 +103,11 @@ void string_trim_whitespaces(char *str);
 //game
 void init_free_gids();
 int start_game();
-void game_send_client_fd(int, int);
+void start_player(int, int);
 int new_game();
 
 //websocket-communicate
 void websocket_receive_frame(int, byte *, int *, byte *, int *);
+
+//uno
+void uno_game_proceed(struct Game *, int, uint64_t, byte *);

@@ -104,7 +104,7 @@ PROGRAMS = $(bin_PROGRAMS)
 am_soltant_uno_OBJECTS = main.$(OBJEXT) websocket.$(OBJEXT) \
 	versions.$(OBJEXT) http.$(OBJEXT) trie.$(OBJEXT) \
 	sol-string.$(OBJEXT) game.$(OBJEXT) \
-	websocket-communicate.$(OBJEXT)
+	websocket-communicate.$(OBJEXT) uno.$(OBJEXT)
 soltant_uno_OBJECTS = $(am_soltant_uno_OBJECTS)
 soltant_uno_DEPENDENCIES =
 AM_V_lt = $(am__v_lt_@AM_V@)
@@ -309,7 +309,8 @@ soltant_uno_SOURCES = \
 	trie.c \
 	sol-string.c \
 	game.c \
-	websocket-communicate.c
+	websocket-communicate.c \
+	uno.c
 
 soltant_uno_LDFLAGS = 
 soltant_uno_LDADD = 
@@ -411,6 +412,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/main.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/sol-string.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/trie.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/uno.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/versions.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/websocket-communicate.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/websocket.Po@am__quote@

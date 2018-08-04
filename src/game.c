@@ -43,20 +43,18 @@ void *run_game(void *fdp){
 
 	while(1){
 		read(fd, command_buff, sizeof(char) * COMMAND_SIZE);
-		int64_t command_name = *(int64_t *)command_buff;
+		uint64_t command_name = *(uint64_t *)command_buff;
+		int player_id = *(uint32_t *)(command_buff + COMMAND_SIZE - 4);
 		byte *command_par = command_buff + COMMAND_NAME_SIZE;
 
 #ifndef NDEBUG
-		fprintf(stderr, "command: %d\nparams:\n", (int)command_name);
-		for(int i=0;i<COMMAND_PAR_SIZE;++i){
-			fprintf(stderr, "%d: %d", i, (int)command_par[i]);
-			if(isprint(command_par[i])){
-				fprintf(stderr, " -- <%c>\n", command_par[i]);
-			}else{
-				fprintf(stderr, "\n");
-			}
+		fprintf(stderr, "new command %d\nplayer_id: %d\n", (int)command_name, player_id);
+		for(int i=0;i<COMMAND_SIZE;++i){
+			fprintf(stderr, "%d -- %d\n", i, (int)command_buff[i]);
 		}
 #endif
+
+		uno_game_proceed(game, player_id, command_name, command_par);
 	}
 
 	free(command_buff);
@@ -89,9 +87,60 @@ int new_game(){
  *   game_id -- game id
  *   fd -- client socket file descriptor
  */
-void game_send_client_fd(int game_id, int fd){
+int game_send_client_fd(int game_id, int fd){
 	byte *buff = malloc(sizeof(byte) * COMMAND_SIZE);
-	*(int64_t *)buff = 2334333;
-	strcpy((char *)(buff) + COMMAND_NAME_SIZE, "Test Data");
+	int pfd[2];
+	pipe(pfd);
+
+#ifndef NDEBUG
+	fprintf(stderr, "fd: %d\npfd1: %d\n", fd, pfd[1]);
+#endif
+
+	*(uint64_t *)buff = 0; //new player
+	*(uint64_t *)(buff + 8) = fd;
+	*(uint64_t *)(buff + 16) = pfd[1];
 	write(game_pipes[game_id], buff, COMMAND_SIZE);
+
+	uint64_t player_id;
+	read(pfd[0], &player_id, 8);
+	close(pfd[0]);
+	return (int)player_id;
+}
+
+/*
+ * receive commands from client
+ * concatenate player id at the end of whole command as 4 bytes
+ * and send them to game
+ * params:
+ *   game_id -- game id
+ *   player_id -- player id
+ *   fd -- client file descriptor
+ */
+void transmit_commands(int game_id, int player_id, int fd){
+	byte *msg_buff = malloc(sizeof(byte) * BUFFER_MAX_SIZE),
+		*command_buff = malloc(sizeof(byte) * (BUFFER_MAX_SIZE + 8));
+	int msg_buff_len = 0;
+
+	while(1){
+		int len;
+		websocket_receive_frame(fd, msg_buff, &msg_buff_len, command_buff, &len);
+		*(uint32_t *)(command_buff + COMMAND_SIZE - 4) = player_id;
+#ifndef NDEBUG
+		fprintf(stderr, "received frame len %d\n", len);
+#endif
+		write(game_pipes[game_id], command_buff, COMMAND_SIZE); //atomic because COMMAND_SIZE is 512
+	}
+}
+
+/*
+ * start a player
+ * registers the player to the game
+ * and transmits commands
+ * params:
+ *   game_id -- game id
+ *   fd -- player websocket client file descriptor
+ */
+void start_player(int game_id, int fd){
+	int player_id = game_send_client_fd(game_id, fd);
+	transmit_commands(game_id, player_id, fd);
 }

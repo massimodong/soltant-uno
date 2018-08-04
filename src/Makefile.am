@@ -22,7 +22,8 @@ soltant_uno_SOURCES = \
 	trie.c \
 	sol-string.c \
 	game.c \
-	websocket-communicate.c
+	websocket-communicate.c \
+	uno.c
 
 soltant_uno_LDFLAGS = 
 
