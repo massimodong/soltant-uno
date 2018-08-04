@@ -26,6 +26,7 @@
 #include <ctype.h>
 #include <pthread.h>
 #include <netinet/in.h>
+#include "cards.h"
 
 #define BUFFER_MAX_SIZE 2048
 #define CLIENT_BUFFER_MAX_SIZE 512
@@ -60,17 +61,26 @@ struct HttpHeader{
 };
 
 struct WebSocket_Client{
-	int fd, bp;
-	char buff[CLIENT_BUFFER_MAX_SIZE];
+	int fd;
 };
 
 struct Player{
 	struct WebSocket_Client wb_client;
+	int *deck, prepared, yelled_uno;
+	size_t deck_size, deck_cnt;
 };
 
+enum {
+	UNO_STATUS_WAITING = 1,
+	UNO_STATUS_NORMAL,
+	UNO_STATUS_DRAW1,
+	UNO_STATUS_DRAW2,
+	UNO_STATUS_DRAW4,
+};
 struct Game{
 	struct Player *players;
-	size_t players_size, players_cnt;
+	int *deck, status, direction, cur_player;
+	size_t players_size, players_cnt, deck_size, deck_cnt;
 };
 
 /*
@@ -111,4 +121,5 @@ int new_game();
 void websocket_receive_frame(int, byte *, int *, byte *, int *);
 
 //uno
+void uno_init(struct Game *);
 void uno_game_proceed(struct Game *, int, uint32_t, byte *);

@@ -19,14 +19,19 @@
 
 #include "soltant-uno.h"
 
-int game_new_player(struct Game *game, int fd){
+/*
+ * add a new player to a game, return new player id (index)
+ * param:
+ *   game -- game struct
+ */
+int game_new_player(struct Game *game){
 	if(game->players_size == game->players_cnt){
 		game->players_size += 1;
 		game->players_size *= 2;
 		game->players = realloc(game->players, sizeof(struct Player) * game->players_size);
 	}
-	//todo: initialize player
 	int player_id = game->players_cnt++;
+	memset(game->players + player_id, 0, sizeof(struct Player));
 	return player_id;
 }
 
@@ -41,9 +46,11 @@ void new_player(struct Game *game, int player_id, byte *par){
 	int fd = ntohl(*(uint32_t *)par),
 		pfd = ntohl(*(uint32_t *)(par + 4));
 
-	uint32_t new_player_id = game_new_player(game, fd);
+	uint32_t new_player_id = game_new_player(game);
 	write(pfd, &new_player_id, 4);
 	close(pfd);
+
+	game->players[player_id].wb_client.fd = fd;
 	return;
 }
 
@@ -71,10 +78,34 @@ void player_play_card(struct Game *game, int player_id, byte *par){
 }
 
 /*
+ * player decides to draw one card from deck instead of playing a card
+ */
+void player_draw1(struct Game *game, int player_id, byte *par){
+}
+
+/*
+ * player can't/won't play a card after drawing one card from deck
+ */
+void player_skip_turn(struct Game *game, int player_id, byte *par){
+}
+
+/*
+ * player reports one user not yelling uno
+ */
+void player_report_uno(struct Game *game, int player_id, byte *par){
+}
+
+/*
  * if some player times out, others can report it to the server
  * the server decides what the timed-out player do
  */
 void player_report_timeout(struct Game *game, int player_id, byte *par){
+}
+
+/*
+ * challenge the previous player's draw 4 card
+ */
+void player_challenge_draw4(struct Game *game, int player_id, byte *par){
 }
 
 const void (*commands[])(struct Game *, int, byte *) = {
@@ -82,7 +113,11 @@ const void (*commands[])(struct Game *, int, byte *) = {
 	player_yell_uno,                       // 1
 	player_prepare,                        // 2
 	player_play_card,                      // 3
-	player_report_timeout                  // 4
+	player_draw1,                          // 4
+	player_skip_turn,                      // 5
+	player_report_uno,                     // 6
+	player_report_timeout,                 // 7
+	player_challenge_draw4,                // 8
 };
 
 /*
@@ -99,4 +134,13 @@ void uno_game_proceed(struct Game *game, int player_id, uint32_t command, byte *
 	}
 	
 	commands[command](game, player_id, par);
+}
+
+/*
+ * init a uno game
+ * params:
+ *   game -- Uno game struct
+ */
+void uno_init(struct Game *game){
+	memset(game, 0, sizeof(struct Game));
 }

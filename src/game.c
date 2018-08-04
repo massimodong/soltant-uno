@@ -39,7 +39,7 @@ void *run_game(void *fdp){
 	int fd = VOIDP2INT(fdp);
 	byte *command_buff = malloc(sizeof(byte) * COMMAND_SIZE);
 	struct Game *game = malloc(sizeof(struct Game));
-	memset(game, 0, sizeof(struct Game));
+	uno_init(game);
 
 	while(1){
 		read(fd, command_buff, sizeof(char) * COMMAND_SIZE);

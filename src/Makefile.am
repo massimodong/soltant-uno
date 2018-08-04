@@ -23,7 +23,8 @@ soltant_uno_SOURCES = \
 	sol-string.c \
 	game.c \
 	websocket-communicate.c \
-	uno.c
+	uno.c \
+	cards.h
 
 soltant_uno_LDFLAGS = 
 
