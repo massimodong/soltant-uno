@@ -26,7 +26,6 @@
 #include <ctype.h>
 #include <pthread.h>
 #include <netinet/in.h>
-#include "cards.h"
 
 #define BUFFER_MAX_SIZE 2048
 #define CLIENT_BUFFER_MAX_SIZE 512

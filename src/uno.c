@@ -18,6 +18,7 @@
  */
 
 #include "soltant-uno.h"
+#include "cards.h"
 
 /*
  * add a new player to a game, return new player id (index)

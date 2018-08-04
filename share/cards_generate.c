@@ -14,8 +14,6 @@ struct CARD{
 }Card[108] = {};
 
 void print(){
-	printf("#define INCLUDE_CARDS 1\n");
-	printf("#ifndef INCLUDE_CARDS\n");
 	printf("enum{\n\tCARD_COLOUR_RED = 0, CARD_COLOUR_YELLOW, CARD_COLOUR_GREEN, CARD_COLOUR_BLUE, CARD_COLOUR_BLACK\n};\n\n");
 	printf("enum{\n\tCARD_SKIP = 10, CARD_REVERSE, CARD_DRAW2, CARD_WILD, CARD_WILD_DRAW4\n};\n\n");
 	printf("struct CARD{\n\tint colour, identity;\n}Card[108] = \n{\n");
@@ -64,7 +62,6 @@ void print(){
 	}
 
 	printf("};\n");
-	printf("#endif");
 }
 
 int main(){
