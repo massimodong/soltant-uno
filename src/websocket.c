@@ -148,7 +148,7 @@ void transmit_commands(int game_id, int fd){
 void *resolve_client(void *fdp){
 	int fd=VOIDP2INT(fdp);
 	int game_id = handshake(fd);
-	game_send_client_fd(game_id, fd);
+	game_send_client_fd(game_id, fd);  //todo: this procedure is currently not thread safe
 	transmit_commands(game_id, fd);
 	close(fd);
 	return NULL;
