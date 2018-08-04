@@ -25,13 +25,14 @@
 #include <string.h>
 #include <ctype.h>
 #include <pthread.h>
+#include <netinet/in.h>
 
 #define BUFFER_MAX_SIZE 2048
 #define CLIENT_BUFFER_MAX_SIZE 512
 #define WebSocket_GUID "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
 #define COMMAND_SIZE 512
-#define COMMAND_NAME_SIZE 8
+#define COMMAND_NAME_SIZE 4
 #define COMMAND_PAR_SIZE COMMAND_SIZE - COMMAND_NAME_SIZE
 
 extern char *PROGRAM_NAME;
@@ -110,4 +111,4 @@ int new_game();
 void websocket_receive_frame(int, byte *, int *, byte *, int *);
 
 //uno
-void uno_game_proceed(struct Game *, int, uint64_t, byte *);
+void uno_game_proceed(struct Game *, int, uint32_t, byte *);

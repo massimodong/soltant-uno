@@ -34,15 +34,15 @@ int game_new_player(struct Game *game, int fd){
  * a new player enters,
  * we will associate it a player id, and send it back to the thread.
  * params:
- *   [0  -  7]: int, player websocket file descriptor
- *   [8  - 16]: int *, file descriptor to write player id
+ *   [0 - 3]: int, player websocket file descriptor
+ *   [4 - 8]: int *, file descriptor to write player id
  */
 void new_player(struct Game *game, int player_id, byte *par){
-	int fd = *(uint64_t *)par,
-		pfd = *(uint64_t *)(par + 8);
+	int fd = ntohl(*(uint32_t *)par),
+		pfd = ntohl(*(uint32_t *)(par + 4));
 
-	uint64_t new_player_id = game_new_player(game, fd);
-	write(pfd, &new_player_id, 8);
+	uint32_t new_player_id = game_new_player(game, fd);
+	write(pfd, &new_player_id, 4);
 	close(pfd);
 	return;
 }
@@ -93,7 +93,7 @@ const void (*commands[])(struct Game *, int, byte *) = {
  *   command -- command to proceed
  *   par -- parameters
  */
-void uno_game_proceed(struct Game *game, int player_id, uint64_t command, byte *par){
+void uno_game_proceed(struct Game *game, int player_id, uint32_t command, byte *par){
 	if(command >= sizeof(commands)/sizeof(void *)){
 		return;
 	}

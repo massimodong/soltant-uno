@@ -43,7 +43,7 @@ void *run_game(void *fdp){
 
 	while(1){
 		read(fd, command_buff, sizeof(char) * COMMAND_SIZE);
-		uint64_t command_name = *(uint64_t *)command_buff;
+		uint32_t command_name = ntohl(*(uint32_t *)command_buff);
 		int player_id = *(uint32_t *)(command_buff + COMMAND_SIZE - 4);
 		byte *command_par = command_buff + COMMAND_NAME_SIZE;
 
@@ -96,13 +96,13 @@ int game_send_client_fd(int game_id, int fd){
 	fprintf(stderr, "fd: %d\npfd1: %d\n", fd, pfd[1]);
 #endif
 
-	*(uint64_t *)buff = 0; //new player
-	*(uint64_t *)(buff + 8) = fd;
-	*(uint64_t *)(buff + 16) = pfd[1];
+	*(uint32_t *)buff = htonl(0); //new player
+	*(uint32_t *)(buff + 4) = htonl(fd);
+	*(uint32_t *)(buff + 8) = htonl(pfd[1]);
 	write(game_pipes[game_id], buff, COMMAND_SIZE);
 
-	uint64_t player_id;
-	read(pfd[0], &player_id, 8);
+	uint32_t player_id;
+	read(pfd[0], &player_id, 4);
 	close(pfd[0]);
 	return (int)player_id;
 }
