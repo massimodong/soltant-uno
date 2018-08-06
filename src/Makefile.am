@@ -24,7 +24,8 @@ soltant_uno_SOURCES = \
 	game.c \
 	websocket-communicate.c \
 	uno.c \
-	cards.h
+	cards.h \
+	randoms.c
 
 soltant_uno_LDFLAGS = 
 

@@ -16,7 +16,7 @@ struct CARD{
 void print(){
 	printf("enum{\n\tCARD_COLOUR_RED = 0, CARD_COLOUR_YELLOW, CARD_COLOUR_GREEN, CARD_COLOUR_BLUE, CARD_COLOUR_BLACK\n};\n\n");
 	printf("enum{\n\tCARD_SKIP = 10, CARD_REVERSE, CARD_DRAW2, CARD_WILD, CARD_WILD_DRAW4\n};\n\n");
-	printf("struct CARD{\n\tint colour, identity;\n}Card[108] = \n{\n");
+	printf("struct CARD{\n\tint colour, identity;\n};\nconst struct CARD Card[108] =\n{\n");
 
 	for(int i=0;i<108;++i){
 		printf("\t{");
@@ -62,6 +62,7 @@ void print(){
 	}
 
 	printf("};\n");
+	printf("int CARDS_NUM = sizeof(Card) / sizeof(struct CARD);");
 }
 
 int main(){

@@ -122,3 +122,8 @@ void websocket_receive_frame(int, byte *, int *, byte *, int *);
 //uno
 void uno_init(struct Game *);
 void uno_game_proceed(struct Game *, int, uint32_t, byte *);
+
+//randoms
+void swap(void *, void *, size_t);
+unsigned int randu();
+void rand_shuffle(void *, void *, size_t);
