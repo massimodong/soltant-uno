@@ -133,3 +133,35 @@ void websocket_receive_frame(int fd, byte *buff, int *buff_len_ptr, byte *frame,
 	*buff_len_ptr = buff_len;
 	if(frame_len_ptr) *frame_len_ptr= frame_len;
 }
+
+/*
+ * send binary data as a frame over websocket protocol
+ * params:
+ *   fd -- websocket file descriptor
+ *   data -- binary data to send
+ *   len -- binary data length
+ */
+void websocket_send_binary(int fd, byte *data, uint64_t len){
+	byte *buff = malloc(sizeof(byte) * (len + 20));
+
+	*buff = 0x82; // 10000010
+	int offset = 0;
+	if(len < 126){
+		*(buff + 1) = len;
+		offset = 2;
+	}else if(len <= USHRT_MAX){
+		*(buff + 1) = 126;
+		*(uint16_t *)(buff + 2) = htons(len);
+		offset = 4;
+	}else{
+		*(buff + 1) = 127;
+		*(uint64_t *)(buff + 2) = htobe64(len);
+		offset = 10;
+	}
+
+	memcpy(buff + offset, data, len);
+
+	write(fd, buff, offset + len);
+
+	free(buff);
+}

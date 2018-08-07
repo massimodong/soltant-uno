@@ -26,6 +26,7 @@
 #include <ctype.h>
 #include <pthread.h>
 #include <netinet/in.h>
+#include <limits.h>
 
 #define BUFFER_MAX_SIZE 2048
 #define CLIENT_BUFFER_MAX_SIZE 512
@@ -119,6 +120,7 @@ int new_game();
 
 //websocket-communicate
 void websocket_receive_frame(int, byte *, int *, byte *, int *);
+void websocket_send_binary(int fd, byte *, uint64_t);
 
 //uno
 void uno_init(struct Game *);
