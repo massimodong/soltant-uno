@@ -109,6 +109,22 @@ void player_report_timeout(struct Game *game, int player_id, byte *par){
 void player_challenge_draw4(struct Game *game, int player_id, byte *par){
 }
 
+/*
+ * in case of challenge of a CARD_WILD_DRAW4,
+ * deny to show the hand and draw 4 cards instead
+ */
+void player_challenge_draw4_deny(struct Game *game, int player_id, byte *par){
+}
+
+/*
+ * in case of challenge of a CARD_WILD_DRAW4,
+ * show the hand,
+ * if challenge success, draw 4 cards instead,
+ * otherwise, opponent draws 6 cards.
+ */
+void player_challenge_draw4_accept(struct Game *game, int player_id, byte *par){
+}
+
 const void (*commands[])(struct Game *, int, byte *) = {
 	new_player,                            // 0
 	player_yell_uno,                       // 1
@@ -119,6 +135,8 @@ const void (*commands[])(struct Game *, int, byte *) = {
 	player_report_uno,                     // 6
 	player_report_timeout,                 // 7
 	player_challenge_draw4,                // 8
+	player_challenge_draw4_deny,           // 9
+	player_challenge_draw4_accept,         // 10
 };
 
 /*
@@ -138,10 +156,29 @@ void uno_game_proceed(struct Game *game, int player_id, uint32_t command, byte *
 }
 
 /*
+ * add a set of `CARDS_NUM` cards to deck
+ * and then shuffle the ADDED CARDS
+ * param:
+ *   game -- game struct
+ */
+void uno_add_deck(struct Game *game){
+	game->deck_size += CARDS_NUM;
+	game->deck = realloc(game->deck, sizeof(int) * game->deck_size);
+
+	for(int i=game->deck_cnt-1;i>=0;--i) game->deck[i+CARDS_NUM] = game->deck[i];
+
+	for(int i=0;i<CARDS_NUM;++i) game->deck[i]=i;
+	rand_shuffle(game->deck, game->deck + CARDS_NUM, sizeof(int));
+
+	game->deck_cnt += CARDS_NUM;
+}
+
+/*
  * init a uno game
  * params:
  *   game -- Uno game struct
  */
 void uno_init(struct Game *game){
 	memset(game, 0, sizeof(struct Game));
+	uno_add_deck(game);
 }

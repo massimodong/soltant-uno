@@ -75,6 +75,7 @@ enum {
 	UNO_STATUS_DRAW1,
 	UNO_STATUS_DRAW2,
 	UNO_STATUS_DRAW4,
+	UNO_STATUS_DRAW4_CHALLENGE,
 };
 struct Game{
 	struct Player *players;
