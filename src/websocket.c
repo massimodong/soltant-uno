@@ -29,30 +29,26 @@
  * params:
  *   value -- binary string to encode
  *   len -- string length
- * return:
- *   a static pointer to the base64 encoded string
+ *   b64_val -- a pointer to the base64 encoded string
  */
-char *base64_encode(unsigned char *value, unsigned int len){
-	static char *base64_value = NULL;
-	base64_value = realloc(base64_value, sizeof(char) * len * 2);
-	FILE *stream = fmemopen(base64_value, len * 2, "w");
+void base64_encode(byte *value, int len, char * b64_val){
+	FILE *stream = fmemopen(b64_val, len * 2, "w");
 	BIO *b64 = BIO_new(BIO_f_base64()), *bio = BIO_new_fp(stream, BIO_NOCLOSE);
 	BIO_push(b64, bio);
-	BIO_write(b64, value, SHA_DIGEST_LENGTH);
+	BIO_write(b64, value, len);
  	BIO_flush(b64);
  	BIO_free_all(b64);
 	fclose(stream);
-	return base64_value;
 }
 
 /*
  * produce `Sec-WebSocket-Accept` value
  * param:
  *   key -- Sec-Websocket-key value
- * return:
- *   valid `Sec-WebSocket-Accept`
+ *   acv -- `Sec-WebSocket-Accept`,
+ *          Must have length at least SHA_DIGEST_LENGTH * 2
  */
-char *get_websocket_accept_value(char *key){
+void get_websocket_accept_value(char *key, char *acv){
 	char *token = malloc(sizeof(char)*
 	                     (strlen(key) + strlen(WebSocket_GUID) + 1));
 	strcpy(token, key);
@@ -60,10 +56,12 @@ char *get_websocket_accept_value(char *key){
 	string_trim_whitespaces(token);
 	strcat(token, WebSocket_GUID);
 
-	unsigned char *sh = SHA1((unsigned char *)token, strlen(token), NULL);
+	byte *sh = malloc(sizeof(byte) * SHA_DIGEST_LENGTH);
+	SHA1((byte *)token, strlen(token), sh);
 	free(token);
 
-	return base64_encode(sh, SHA_DIGEST_LENGTH);
+	base64_encode(sh, SHA_DIGEST_LENGTH, acv);
+	free(sh);
 }
 
 /*
@@ -105,12 +103,14 @@ int handshake(int fd){
 
 	sscanf(hh->request_uri, "/game/%d", &game_id);
 
-	char *accept_value = get_websocket_accept_value(socket_key);
+	char *accept_value = malloc(sizeof(char) * SHA_DIGEST_LENGTH * 2);
+	get_websocket_accept_value(socket_key, accept_value);
 
 	dprintf(fd, "HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: %s\r\n", accept_value);
 	
 	delHttpHeader(hh);
 	free(buff);
+	free(accept_value);
 
 #ifndef NDEBUG
 	fprintf(stderr, "Handshake complete with game id : %d\n", game_id);
