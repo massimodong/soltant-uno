@@ -1,0 +1,34 @@
+<html>
+  <head>
+    <title>Uno Client Sample</title>
+  </head>
+  <body>
+
+    <div style="height: 99%; width: 69.7%; display: inline-block; ">
+    </div>
+    <textarea id="msgarea" style="height: 99%; width: 29.7%;" readonly></textarea>
+
+    <script>
+
+function msg(str){
+  var msgarea = document.getElementById('msgarea');
+  msgarea.innerHTML = msgarea.innerHTML + str + "\n";
+  msgarea.scrollTop = msgarea.scrollHeight;
+}
+
+// WebSocket
+var wsoc = new WebSocket("ws://localhost:11111/game/255");
+
+wsoc.binaryType = "arraybuffer";
+
+wsoc.onmessage = function(msg){
+  dv = new DataView(msg.data);
+  console.log('new message, first integer is ' + dv.getInt32(0));
+};
+
+wsoc.onopen = function(event){
+  msg("WebSocket ready state is OPEN!");
+}
+    </script>
+  </body>
+</html>
