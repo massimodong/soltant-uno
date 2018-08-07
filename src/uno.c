@@ -51,7 +51,11 @@ void new_player(struct Game *game, int player_id, byte *par){
 	write(pfd, &new_player_id, 4);
 	close(pfd);
 
-	game->players[player_id].wb_client.fd = fd;
+	game->players[new_player_id].wb_client.fd = fd;
+
+#ifndef NDEBUG
+	fprintf(stderr, "new Player with id: %d\n", new_player_id);
+#endif
 	return;
 }
 
