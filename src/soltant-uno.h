@@ -65,6 +65,7 @@ struct WebSocket_Client{
 
 struct Player{
 	struct WebSocket_Client wb_client;
+	char *username;
 	int *deck, prepared, yelled_uno;
 	size_t deck_size, deck_cnt;
 };
@@ -113,7 +114,6 @@ void string_trim_whitespaces(char *str);
 
 //game
 void init_free_gids();
-int start_game();
 void start_player(int, int);
 int new_game();
 

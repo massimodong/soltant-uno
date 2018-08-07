@@ -37,6 +37,47 @@ int game_new_player(struct Game *game){
 }
 
 /*
+ * determines if all the players are prepared
+ * param:
+ *   game -- game struct
+ * return:
+ *   0 or 1
+ */
+int game_all_players_prepared(struct Game *game){
+	for(int i=0;i<game->players_cnt;++i){
+		if(game->players[i].prepared == 0) return 0;
+	}
+	return 1;
+}
+
+/*
+ * add a set of `CARDS_NUM` cards to deck
+ * and then shuffle the ADDED CARDS
+ * param:
+ *   game -- game struct
+ */
+void uno_add_deck(struct Game *game){
+	game->deck_size += CARDS_NUM;
+	game->deck = realloc(game->deck, sizeof(int) * game->deck_size);
+
+	for(int i=game->deck_cnt-1;i>=0;--i) game->deck[i+CARDS_NUM] = game->deck[i];
+
+	for(int i=0;i<CARDS_NUM;++i) game->deck[i]=i;
+	rand_shuffle(game->deck, game->deck + CARDS_NUM, sizeof(int));
+
+	game->deck_cnt += CARDS_NUM;
+}
+
+/*
+ * start a game.
+ */
+void start_game(struct Game *game){
+	game->status = UNO_STATUS_NORMAL;
+	game->direction = game->cur_player = 0;
+	uno_add_deck(game);
+}
+
+/*
  * a new player enters,
  * we will associate it a player id, and send it back to the thread.
  * params:
@@ -64,8 +105,31 @@ void new_player(struct Game *game, int player_id, byte *par){
  * do nothing if already prepared
  * start the game if there are more than one player and this is the last player not prepared
  * no undo
+ * params:
+ *   [0 - 3]: int, player username length, 20 maximum
+ *   [4 - x]: string, player username
  */
 void player_prepare(struct Game *game, int player_id, byte *par){
+	int length;
+	char *username;
+	length = ntohl(*(int32_t *)par);
+	username = (char *)(par + 4);
+
+	if(game->status != UNO_STATUS_WAITING){
+		return;
+	}
+	if(game->players[player_id].prepared){
+		return;
+	}
+
+	game->players[player_id].prepared = 1;
+	game->players[player_id].username = malloc(sizeof(char) * (length + 1));
+	memcpy(game->players[player_id].username, username, sizeof(char) * length);
+	game->players[player_id].username[length] = '\0';
+
+	if(game->players_cnt >= 2 && game_all_players_prepared(game)){
+		start_game(game);
+	}
 }
 
 /*
@@ -160,29 +224,10 @@ void uno_game_proceed(struct Game *game, int player_id, uint32_t command, byte *
 }
 
 /*
- * add a set of `CARDS_NUM` cards to deck
- * and then shuffle the ADDED CARDS
- * param:
- *   game -- game struct
- */
-void uno_add_deck(struct Game *game){
-	game->deck_size += CARDS_NUM;
-	game->deck = realloc(game->deck, sizeof(int) * game->deck_size);
-
-	for(int i=game->deck_cnt-1;i>=0;--i) game->deck[i+CARDS_NUM] = game->deck[i];
-
-	for(int i=0;i<CARDS_NUM;++i) game->deck[i]=i;
-	rand_shuffle(game->deck, game->deck + CARDS_NUM, sizeof(int));
-
-	game->deck_cnt += CARDS_NUM;
-}
-
-/*
  * init a uno game
  * params:
  *   game -- Uno game struct
  */
 void uno_init(struct Game *game){
 	memset(game, 0, sizeof(struct Game));
-	uno_add_deck(game);
 }
