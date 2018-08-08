@@ -49,9 +49,6 @@ void *run_game(void *fdp){
 
 #ifndef NDEBUG
 		fprintf(stderr, "new command %d\nplayer_id: %d\n", (int)command_name, player_id);
-		for(int i=0;i<COMMAND_SIZE;++i){
-			fprintf(stderr, "%d -- %d\n", i, (int)command_buff[i]);
-		}
 #endif
 
 		uno_game_proceed(game, player_id, command_name, command_par);

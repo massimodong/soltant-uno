@@ -85,11 +85,6 @@ int handshake(int fd){
 	int len, game_id = -1;
 	len = read(fd, buff, BUFFER_MAX_SIZE);
 	buff[len] = '\0';
-	
-#ifndef NDEBUG
-	fprintf(stderr, "read len %d\n", len);
-	fprintf(stderr, "%s", buff);
-#endif
 
 	struct HttpHeader *hh = newHttpHeader(buff);
 

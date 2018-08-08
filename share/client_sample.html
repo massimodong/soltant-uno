@@ -16,6 +16,12 @@ function msg(str){
   msgarea.scrollTop = msgarea.scrollHeight;
 }
 
+/*********************/
+function new_player_added(player_id){
+  msg("new player with player_id " + player_id + " added to the game");
+}
+/*********************/
+
 // WebSocket
 var wsoc = new WebSocket("ws://localhost:11111/game/255");
 
@@ -24,6 +30,14 @@ wsoc.binaryType = "arraybuffer";
 wsoc.onmessage = function(msg){
   dv = new DataView(msg.data);
   console.log('new message, first integer is ' + dv.getInt32(0));
+  console.log(msg);
+
+  command = dv.getInt32(0);
+  switch(command){
+    case 0:
+      player_id = dv.getUint32(4);
+      new_player_added(player_id);
+  }
 };
 
 wsoc.onopen = function(event){

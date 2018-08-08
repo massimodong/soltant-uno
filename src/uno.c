@@ -20,6 +20,28 @@
 #include "soltant-uno.h"
 #include "cards.h"
 
+/************ communication part ***************/
+/*
+ * broadcast messages
+ */
+void broadcast(struct Game *game, byte *msg, size_t len){
+	for(int i=0;i<game->players_cnt;++i){
+		websocket_send_binary(game->players[i].wb_client.fd, msg, len);
+	}
+}
+
+/*
+ * broadcast that a new player added
+ */
+void broadcast_new_player(struct Game *game, int player_id){
+	byte buff[8];
+	*(uint32_t *)buff = htonl(0);
+	*(uint32_t *)(buff + 4) = htonl(player_id);
+	broadcast(game, buff, 8);
+}
+
+/************* end of communication part *********/
+
 /*
  * add a new player to a game, return new player id (index)
  * param:
@@ -77,6 +99,8 @@ void start_game(struct Game *game){
 	uno_add_deck(game);
 }
 
+/*********** commands *******************/
+
 /*
  * a new player enters,
  * we will associate it a player id, and send it back to the thread.
@@ -93,6 +117,8 @@ void new_player(struct Game *game, int player_id, byte *par){
 	close(pfd);
 
 	game->players[new_player_id].wb_client.fd = fd;
+
+	broadcast_new_player(game, new_player_id);
 
 #ifndef NDEBUG
 	fprintf(stderr, "new Player with id: %d\n", new_player_id);
@@ -193,6 +219,8 @@ void player_challenge_draw4_deny(struct Game *game, int player_id, byte *par){
 void player_challenge_draw4_accept(struct Game *game, int player_id, byte *par){
 }
 
+/***************end of commands *********************/
+
 const void (*commands[])(struct Game *, int, byte *) = {
 	new_player,                            // 0
 	player_yell_uno,                       // 1
@@ -217,6 +245,7 @@ const void (*commands[])(struct Game *, int, byte *) = {
  */
 void uno_game_proceed(struct Game *game, int player_id, uint32_t command, byte *par){
 	if(command >= sizeof(commands)/sizeof(void *)){
+		fprintf(stderr, "invalid command!\n");
 		return;
 	}
 	
