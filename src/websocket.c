@@ -74,13 +74,15 @@ void handshake_failure(int fd){
 }
 
 /*
- * complete handshake and get game id
+ * connect to game server
+ * and complete handshake
  * param:
  *   fd -- client socket file descriptor
+ *   username -- pointer to store username
  * return:
- *   game_id data in handshake header, -1 if in error
+ *   gid -- game id, -1 if error
  */
-int handshake(int fd){
+int handshake(int fd, char *username){
 	char *buff = malloc(sizeof(char) * BUFFER_MAX_SIZE);
 	int len, game_id = -1;
 	len = read(fd, buff, BUFFER_MAX_SIZE);
@@ -97,6 +99,12 @@ int handshake(int fd){
 	}
 
 	sscanf(hh->request_uri, "/game/%d", &game_id);
+
+#ifndef NDEBUG
+	fprintf(stderr, "new username: %s\n", (char *)trie_query(hh->get_params, "username"));
+#endif
+	if(!game_register(game_id, trie_query(hh->get_params, "username"), fd)) return -1;
+	strcpy(username, trie_query(hh->get_params, "username"));
 
 	char *accept_value = malloc(sizeof(char) * SHA_DIGEST_LENGTH * 2);
 	get_websocket_accept_value(socket_key, accept_value);
@@ -121,8 +129,10 @@ int handshake(int fd){
  */
 void *resolve_client(void *fdp){
 	int fd=VOIDP2INT(fdp);
-	int game_id = handshake(fd);
-	start_player(game_id, fd);
+	char username[USERNAME_MAX_SIZE + 1];
+	int gid = handshake(fd, username);
+	if(gid > 0) start_player(gid, username, fd);
+	close(fd);
 	return NULL;
 }
 

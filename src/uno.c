@@ -25,9 +25,10 @@
  * broadcast messages
  */
 void broadcast(struct Game *game, byte *msg, size_t len){
+	/*
 	for(int i=0;i<game->players_cnt;++i){
 		websocket_send_binary(game->players[i].wb_client.fd, msg, len);
-	}
+	}*/
 }
 
 /*
@@ -47,15 +48,21 @@ void broadcast_new_player(struct Game *game, int player_id){
  * param:
  *   game -- game struct
  */
-int game_new_player(struct Game *game){
+int game_new_player(struct Game *game, const char *username){
+	/*
 	if(game->players_size == game->players_cnt){
 		game->players_size += 1;
 		game->players_size *= 2;
 		game->players = realloc(game->players, sizeof(struct Player) * game->players_size);
 	}
 	int player_id = game->players_cnt++;
-	memset(game->players + player_id, 0, sizeof(struct Player));
-	return player_id;
+	memset(game->players + player_id, 0, sizeof(struct Player));*/
+	struct Player *player = trie_query(game->players, username);
+	if(player != NULL) return 0;
+
+	player = malloc(sizeof(struct Player));
+	trie_insert(game->players, username, player);
+	return 1;
 }
 
 /*
@@ -66,9 +73,11 @@ int game_new_player(struct Game *game){
  *   0 or 1
  */
 int game_all_players_prepared(struct Game *game){
+	/*
 	for(int i=0;i<game->players_cnt;++i){
 		if(game->players[i].prepared == 0) return 0;
 	}
+	*/
 	return 1;
 }
 
@@ -103,25 +112,33 @@ void start_game(struct Game *game){
 
 /*
  * a new player enters,
- * we will associate it a player id, and send it back to the thread.
+ * we attempt to register it to the game
+ * and tell the client the result
  * params:
  *   [0 - 3]: int, player websocket file descriptor
- *   [4 - 8]: int *, file descriptor to write player id
+ *   [4 - 8]: int *, file descriptor to write result, an integer 0 or 1 is to be written
+ *   [9 - ?]: string, username
  */
-void new_player(struct Game *game, int player_id, byte *par){
+void new_player(struct Game *game, const char *username, byte *par){
 	int fd = ntohl(*(uint32_t *)par),
 		pfd = ntohl(*(uint32_t *)(par + 4));
 
-	uint32_t new_player_id = game_new_player(game);
-	write(pfd, &new_player_id, 4);
+	int result = game_new_player(game, username);
+	write(pfd, &result, 4);
 	close(pfd);
 
-	game->players[new_player_id].wb_client.fd = fd;
+	if(!result) return;
 
-	broadcast_new_player(game, new_player_id);
+	struct Player *player = trie_query(game->players, username);
+	memset(player, 0, sizeof(struct Player));
+	player->wb_client.fd = fd;
+	player->username = malloc(sizeof(char) * (USERNAME_MAX_SIZE + 1));
+	strcpy(player->username, username);
+
+	//broadcast_new_player(game, new_player_id);
 
 #ifndef NDEBUG
-	fprintf(stderr, "new Player with id: %d\n", new_player_id);
+	fprintf(stderr, "new Player: %s\n", username);
 #endif
 	return;
 }
@@ -135,7 +152,8 @@ void new_player(struct Game *game, int player_id, byte *par){
  *   [0 - 3]: int, player username length, 20 maximum
  *   [4 - x]: string, player username
  */
-void player_prepare(struct Game *game, int player_id, byte *par){
+void player_prepare(struct Game *game, const char *username, byte *par){
+	/*
 	int length;
 	char *username;
 	length = ntohl(*(int32_t *)par);
@@ -156,58 +174,59 @@ void player_prepare(struct Game *game, int player_id, byte *par){
 	if(game->players_cnt >= 2 && game_all_players_prepared(game)){
 		start_game(game);
 	}
+*/
 }
 
 /*
  * yell uno!
  * set player as `yelled_uno`
  */
-void player_yell_uno(struct Game *game, int player_id, byte *par){
-	fprintf(stderr, "player %d yells uno!\n", player_id);
+void player_yell_uno(struct Game *game, const char *username, byte *par){
+	//fprintf(stderr, "player %d yells uno!\n", player_id);
 }
 
 /*
  * player plays a card, following the rules of the game
  */
-void player_play_card(struct Game *game, int player_id, byte *par){
+void player_play_card(struct Game *game, const char *username, byte *par){
 }
 
 /*
  * player decides to draw one card from deck instead of playing a card
  */
-void player_draw1(struct Game *game, int player_id, byte *par){
+void player_draw1(struct Game *game, const char *username, byte *par){
 }
 
 /*
  * player can't/won't play a card after drawing one card from deck
  */
-void player_skip_turn(struct Game *game, int player_id, byte *par){
+void player_skip_turn(struct Game *game, const char *username, byte *par){
 }
 
 /*
  * player reports one user not yelling uno
  */
-void player_report_uno(struct Game *game, int player_id, byte *par){
+void player_report_uno(struct Game *game, const char *username, byte *par){
 }
 
 /*
  * if some player times out, others can report it to the server
  * the server decides what the timed-out player do
  */
-void player_report_timeout(struct Game *game, int player_id, byte *par){
+void player_report_timeout(struct Game *game, const char *username, byte *par){
 }
 
 /*
  * challenge the previous player's draw 4 card
  */
-void player_challenge_draw4(struct Game *game, int player_id, byte *par){
+void player_challenge_draw4(struct Game *game, const char *username, byte *par){
 }
 
 /*
  * in case of challenge of a CARD_WILD_DRAW4,
  * deny to show the hand and draw 4 cards instead
  */
-void player_challenge_draw4_deny(struct Game *game, int player_id, byte *par){
+void player_challenge_draw4_deny(struct Game *game, const char *username, byte *par){
 }
 
 /*
@@ -216,12 +235,12 @@ void player_challenge_draw4_deny(struct Game *game, int player_id, byte *par){
  * if challenge success, draw 4 cards instead,
  * otherwise, opponent draws 6 cards.
  */
-void player_challenge_draw4_accept(struct Game *game, int player_id, byte *par){
+void player_challenge_draw4_accept(struct Game *game, const char *username, byte *par){
 }
 
 /***************end of commands *********************/
 
-const void (*commands[])(struct Game *, int, byte *) = {
+const void (*commands[])(struct Game *, const char*, byte *) = {
 	new_player,                            // 0
 	player_yell_uno,                       // 1
 	player_prepare,                        // 2
@@ -243,13 +262,13 @@ const void (*commands[])(struct Game *, int, byte *) = {
  *   command -- command to proceed
  *   par -- parameters
  */
-void uno_game_proceed(struct Game *game, int player_id, uint32_t command, byte *par){
+void uno_game_proceed(struct Game *game, const char *username, uint32_t command, byte *par){
 	if(command >= sizeof(commands)/sizeof(void *)){
 		fprintf(stderr, "invalid command!\n");
 		return;
 	}
 	
-	commands[command](game, player_id, par);
+	commands[command](game, username, par);
 }
 
 /*
@@ -259,4 +278,5 @@ void uno_game_proceed(struct Game *game, int player_id, uint32_t command, byte *
  */
 void uno_init(struct Game *game){
 	memset(game, 0, sizeof(struct Game));
+	game->players = newTrie();
 }

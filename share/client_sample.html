@@ -3,11 +3,16 @@
     <title>Uno Client Sample</title>
   </head>
   <body>
-
     <div style="height: 99%; width: 69.7%; display: inline-block; ">
     </div>
-    <textarea id="msgarea" style="height: 99%; width: 29.7%;" readonly></textarea>
-
+    <div style="height: 99%; width: 29.7%; display: inline-block">
+      <div style="height: 30%; width: 100%; display: inline-block">
+        <input id="input_server_address" style="width: 100%" placeholder="Server Address (ws://localhost:11111/game/255)"></input>
+        <input id="input_username" style="width: 100%" placeholder="Username"></input>
+        <button id="button_start_game" onclick="start_game();return false;">Connect</button>
+      </div>
+      <textarea id="msgarea" style="height: 70%; width: 100%;" readonly></textarea>
+    </div>
     <script>
 
 function msg(str){
@@ -23,25 +28,42 @@ function new_player_added(player_id){
 /*********************/
 
 // WebSocket
-var wsoc = new WebSocket("ws://localhost:11111/game/255");
+function start_game(){
+  document.getElementById('button_start_game').disabled=true;
+  var server_address = document.getElementById('input_server_address').value;
+  var username = document.getElementById('input_username').value;
 
-wsoc.binaryType = "arraybuffer";
-
-wsoc.onmessage = function(msg){
-  dv = new DataView(msg.data);
-  console.log('new message, first integer is ' + dv.getInt32(0));
-  console.log(msg);
-
-  command = dv.getInt32(0);
-  switch(command){
-    case 0:
-      player_id = dv.getUint32(4);
-      new_player_added(player_id);
+  if(server_address == ""){
+    server_address = "ws://localhost:11111/game/255";
   }
-};
+  if(username == ""){
+    username = "noname";
+  }
 
-wsoc.onopen = function(event){
-  msg("WebSocket ready state is OPEN!");
+  var wsoc = new WebSocket(server_address + "?username=" + username);
+
+  wsoc.binaryType = "arraybuffer";
+
+  wsoc.onmessage = function(msg){
+    dv = new DataView(msg.data);
+    console.log('new message, first integer is ' + dv.getInt32(0));
+    console.log(msg);
+
+    command = dv.getInt32(0);
+    switch(command){
+      case 0:
+        player_name_length = dv.getUint32(4);
+    }
+  };
+
+  wsoc.onopen = function(event){
+    msg("WebSocket ready state is OPEN!");
+  }
+
+  wsoc.onclose = function(event){
+    msg("WebSocket closed!");
+    document.getElementById('button_start_game').disabled=false;
+  }
 }
     </script>
   </body>

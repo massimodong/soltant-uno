@@ -36,6 +36,8 @@
 #define COMMAND_NAME_SIZE 4
 #define COMMAND_PAR_SIZE COMMAND_SIZE - COMMAND_NAME_SIZE
 
+#define USERNAME_MAX_SIZE 20
+
 extern char *PROGRAM_NAME;
 extern int SERVER_PORT;
 
@@ -57,7 +59,7 @@ struct Trie{
 struct HttpHeader{
 	 char *request_uri;
 	 char *method;
-	 struct Trie *fields;
+	 struct Trie *fields, *get_params;
 };
 
 struct WebSocket_Client{
@@ -80,9 +82,9 @@ enum {
 	UNO_STATUS_DRAW4_CHALLENGE,
 };
 struct Game{
-	struct Player *players;
+	struct Trie *players;
 	int *deck, status, direction, cur_player;
-	size_t players_size, players_cnt, deck_size, deck_cnt;
+	size_t deck_size, deck_cnt;
 };
 
 /*
@@ -115,7 +117,8 @@ void string_trim_whitespaces(char *str);
 
 //game
 void init_free_gids();
-void start_player(int, int);
+int game_register(int, const char *, int);
+void start_player(int, const char *, int);
 int new_game();
 
 //websocket-communicate
@@ -124,7 +127,7 @@ void websocket_send_binary(int fd, byte *, uint64_t);
 
 //uno
 void uno_init(struct Game *);
-void uno_game_proceed(struct Game *, int, uint32_t, byte *);
+void uno_game_proceed(struct Game *, const char *, uint32_t, byte *);
 
 //randoms
 void swap(void *, void *, size_t);

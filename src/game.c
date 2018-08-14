@@ -37,6 +37,7 @@ void init_free_gids(){
  */
 void *run_game(void *fdp){
 	int fd = VOIDP2INT(fdp);
+	char username[USERNAME_MAX_SIZE + 1];
 	byte *command_buff = malloc(sizeof(byte) * COMMAND_SIZE);
 	struct Game *game = malloc(sizeof(struct Game));
 	uno_init(game);
@@ -44,14 +45,14 @@ void *run_game(void *fdp){
 	while(1){
 		read(fd, command_buff, sizeof(char) * COMMAND_SIZE);
 		uint32_t command_name = ntohl(*(uint32_t *)command_buff);
-		int player_id = *(uint32_t *)(command_buff + COMMAND_SIZE - 4);
+		strcpy(username, (char *)(command_buff + COMMAND_SIZE - USERNAME_MAX_SIZE - 1));
 		byte *command_par = command_buff + COMMAND_NAME_SIZE;
 
 #ifndef NDEBUG
-		fprintf(stderr, "new command %d\nplayer_id: %d\n", (int)command_name, player_id);
+		fprintf(stderr, "new command %d\nplayer: %s\n", (int)command_name, username);
 #endif
 
-		uno_game_proceed(game, player_id, command_name, command_par);
+		uno_game_proceed(game, username, command_name, command_par);
 	}
 
 	free(command_buff);
@@ -82,38 +83,39 @@ int new_game(){
  * if game doesn't exists, do nothing
  * params:
  *   game_id -- game id
+ *   username -- username
  *   fd -- client socket file descriptor
+ * return:
+ *   1 or 0
  */
-int game_send_client_fd(int game_id, int fd){
+int game_register(int game_id, const char *username, int fd){
 	byte *buff = malloc(sizeof(byte) * COMMAND_SIZE);
 	int pfd[2];
 	pipe(pfd);
 
-#ifndef NDEBUG
-	fprintf(stderr, "fd: %d\npfd1: %d\n", fd, pfd[1]);
-#endif
-
 	*(uint32_t *)buff = htonl(0); //new player
 	*(uint32_t *)(buff + 4) = htonl(fd);
 	*(uint32_t *)(buff + 8) = htonl(pfd[1]);
+	strcpy((char *)(buff + COMMAND_SIZE - USERNAME_MAX_SIZE - 1), username);
 	write(game_pipes[game_id], buff, COMMAND_SIZE);
 
-	uint32_t player_id;
-	read(pfd[0], &player_id, 4);
+	uint32_t result;
+	read(pfd[0], &result, 4);
 	close(pfd[0]);
-	return (int)player_id;
+
+	return (int)result;
 }
 
 /*
  * receive commands from client
- * concatenate player id at the end of whole command as 4 bytes
+ * concatenate username at the end of whole command as USERNAME_MAX_SIZE + 1 bytes
  * and send them to game
  * params:
- *   game_id -- game id
- *   player_id -- player id
+ *   gfd -- game file descriptor
+ *   username -- username
  *   fd -- client file descriptor
  */
-void transmit_commands(int game_id, int player_id, int fd){
+void transmit_commands(int gfd, const char *username, int fd){
 	byte *msg_buff = malloc(sizeof(byte) * BUFFER_MAX_SIZE),
 		*command_buff = malloc(sizeof(byte) * (BUFFER_MAX_SIZE + 8));
 	int msg_buff_len = 0;
@@ -121,11 +123,11 @@ void transmit_commands(int game_id, int player_id, int fd){
 	while(1){
 		int len;
 		websocket_receive_frame(fd, msg_buff, &msg_buff_len, command_buff, &len);
-		*(uint32_t *)(command_buff + COMMAND_SIZE - 4) = player_id;
+		strcpy((char *)(command_buff + COMMAND_SIZE - USERNAME_MAX_SIZE - 1), username);
 #ifndef NDEBUG
 		fprintf(stderr, "received frame len %d\n", len);
 #endif
-		write(game_pipes[game_id], command_buff, COMMAND_SIZE); //atomic because COMMAND_SIZE is 512
+		write(gfd, command_buff, COMMAND_SIZE); //atomic because COMMAND_SIZE is 512
 	}
 }
 
@@ -135,9 +137,9 @@ void transmit_commands(int game_id, int player_id, int fd){
  * and transmits commands
  * params:
  *   game_id -- game id
+ *   username -- username
  *   fd -- player websocket client file descriptor
  */
-void start_player(int game_id, int fd){
-	int player_id = game_send_client_fd(game_id, fd);
-	transmit_commands(game_id, player_id, fd);
+void start_player(int gid, const char *username, int fd){
+	transmit_commands(game_pipes[gid], username, fd);
 }

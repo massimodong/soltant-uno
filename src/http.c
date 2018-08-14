@@ -25,9 +25,48 @@
  */
 
 /*
+ * set request_uri and get parameters
+ * params:
+ *   hh -- a HttpHeader
+ *   ri -- request_uri
+ * return:
+ *  1 on success, -1 on unsuccess
+ */
+int set_request_uri(struct HttpHeader *hh, char *ri){
+	char *path, *token, *path_saveptr, *token_saveptr;
+
+	path = strtok_r(ri, "?", &path_saveptr);
+	if(path == NULL) return -1;
+	hh->request_uri = malloc(sizeof(char) * (strlen(path) + 1));
+	strcpy(hh->request_uri, path);
+
+	hh->get_params = newTrie();
+	
+	path = strtok_r(NULL, "?", &path_saveptr);
+	token = strtok_r(path, "&", &token_saveptr);
+	while(token != NULL){
+		char *name = token, *value = token;
+		while(*value != '='){
+			if(*value == '\0') goto loop_end;
+			++value;
+		}
+		*value = '\0';
+		++value;
+
+		char *_mem = malloc(sizeof(char)*(strlen(value)+1));
+		strcpy(_mem, value);
+		trie_insert(hh->get_params, name, _mem);
+loop_end:
+		token = strtok_r(NULL, "&", &token_saveptr);
+	}
+	return 1;
+}
+
+/*
  * examine request line (first line of a http header),
  * and set request_uri (which will be something as `/path/subpath`),
- * and method (`post` or `get`) for a HttpHeader.
+ * and method (`post` or `get`) for a HttpHeader
+ * and get parameters
  * params:
  *   hh -- a HttpHeader
  *   rl -- request line (first line of a http header)
@@ -36,7 +75,7 @@
  */
 int set_request_line(struct HttpHeader *hh, char *rl){
 	char *token, *saveptr;
-	
+
 	token = strtok_r(rl, " ", &saveptr);
 	if(token == NULL) return -1;
 	string_to_lowercase(token);
@@ -51,8 +90,11 @@ int set_request_line(struct HttpHeader *hh, char *rl){
 		free(hh->method);
 		return -1;
 	}
+	/*
 	hh->request_uri = malloc(sizeof(char)*(strlen(token)+1));
 	strcpy(hh->request_uri, token);
+	*/
+	set_request_uri(hh, token);
 
 	token = strtok_r(NULL, " ", &saveptr);
 	if(token != NULL) string_to_lowercase(token);
