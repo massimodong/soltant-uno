@@ -118,11 +118,13 @@ int game_register(int game_id, const char *username, int fd){
 void transmit_commands(int gfd, const char *username, int fd){
 	byte *msg_buff = malloc(sizeof(byte) * BUFFER_MAX_SIZE),
 		*command_buff = malloc(sizeof(byte) * (BUFFER_MAX_SIZE + 8));
-	int msg_buff_len = 0;
+	int msg_buff_len = 0, len, res=0;
 
-	while(1){
-		int len;
-		websocket_receive_frame(fd, msg_buff, &msg_buff_len, command_buff, &len);
+	while(res == 0){
+		res = websocket_receive_frame(fd, msg_buff, &msg_buff_len, command_buff, &len);
+		if(res){
+			*(uint32_t *)command_buff = htonl(2);
+		}
 		strcpy((char *)(command_buff + COMMAND_SIZE - USERNAME_MAX_SIZE - 1), username);
 #ifndef NDEBUG
 		fprintf(stderr, "received frame len %d\n", len);

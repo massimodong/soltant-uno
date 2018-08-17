@@ -30,9 +30,11 @@ void trie_dfs_send_message(struct Trie *tr, void *parp){
 		size_t len;
 	};
 	fprintf(stderr, "fd: %d\n", ((struct Player*)tr->value)->wb_client.fd);
-	websocket_send_binary(((struct Player*)tr->value)->wb_client.fd,
-	                      ((struct Par *)parp)->buffer,
-	                      ((struct Par *)parp)->len);
+	if(((struct Player*)tr->value)->online){
+		websocket_send_binary(((struct Player*)tr->value)->wb_client.fd,
+		                      ((struct Par *)parp)->buffer,
+		                      ((struct Par *)parp)->len);
+	}
 }
 
 void broadcast(struct Game *game, byte *msg, size_t len){
@@ -49,6 +51,14 @@ void broadcast(struct Game *game, byte *msg, size_t len){
 void broadcast_new_player(struct Game *game, const char *username){
 	byte buff[30];
 	*(uint32_t *)buff = htonl(0);
+	*(uint32_t *)(buff + 4) = htonl(strlen(username));
+	strcpy((char *)(buff + 8), username);
+	broadcast(game, buff, 8 + strlen(username));
+}
+
+void broadcast_offline_player(struct Game *game, const char *username){
+	byte buff[30];
+	*(uint32_t *)buff = htonl(1);
 	*(uint32_t *)(buff + 4) = htonl(strlen(username));
 	strcpy((char *)(buff + 8), username);
 	broadcast(game, buff, 8 + strlen(username));
@@ -139,6 +149,7 @@ void new_player(struct Game *game, const char *username, byte *par){
 	struct Player *player = trie_query(game->players, username);
 	memset(player, 0, sizeof(struct Player));
 	player->wb_client.fd = fd;
+	player->online = 1;
 	player->username = malloc(sizeof(char) * (USERNAME_MAX_SIZE + 1));
 	strcpy(player->username, username);
 
@@ -149,37 +160,13 @@ void new_player(struct Game *game, const char *username, byte *par){
 }
 
 /*
- * set the player as `prepared` and set `username`
- * do nothing if already prepared
- * start the game if there are more than one player and this is the last player not prepared
- * no undo
- * params:
- *   [0 - 3]: int, player username length, 20 maximum
- *   [4 - x]: string, player username
+ * player disconnect
  */
-void player_prepare(struct Game *game, const char *username, byte *par){
-	/*
-	int length;
-	char *username;
-	length = ntohl(*(int32_t *)par);
-	username = (char *)(par + 4);
-
-	if(game->status != UNO_STATUS_WAITING){
-		return;
-	}
-	if(game->players[player_id].prepared){
-		return;
-	}
-
-	game->players[player_id].prepared = 1;
-	game->players[player_id].username = malloc(sizeof(char) * (length + 1));
-	memcpy(game->players[player_id].username, username, sizeof(char) * length);
-	game->players[player_id].username[length] = '\0';
-
-	if(game->players_cnt >= 2 && game_all_players_prepared(game)){
-		start_game(game);
-	}
-*/
+void player_offline(struct Game *game, const char *username, byte *par){
+	struct Player *player = trie_query(game->players, username);
+	player->online = 0;
+	close(player->wb_client.fd);
+	broadcast_offline_player(game, username);
 }
 
 /*
@@ -248,7 +235,7 @@ void player_challenge_draw4_accept(struct Game *game, const char *username, byte
 const void (*commands[])(struct Game *, const char*, byte *) = {
 	new_player,                            // 0
 	player_yell_uno,                       // 1
-	player_prepare,                        // 2
+	player_offline,                        // 2
 	player_play_card,                      // 3
 	player_draw1,                          // 4
 	player_skip_turn,                      // 5

@@ -69,7 +69,7 @@ struct WebSocket_Client{
 struct Player{
 	struct WebSocket_Client wb_client;
 	char *username;
-	int *deck, prepared, yelled_uno;
+	int *deck, online, yelled_uno;
 	size_t deck_size, deck_cnt;
 };
 
@@ -123,7 +123,7 @@ void start_player(int, const char *, int);
 int new_game();
 
 //websocket-communicate
-void websocket_receive_frame(int, byte *, int *, byte *, int *);
+int websocket_receive_frame(int, byte *, int *, byte *, int *);
 void websocket_send_binary(int fd, byte *, uint64_t);
 
 //uno

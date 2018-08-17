@@ -22,12 +22,24 @@ function msg(str){
 }
 
 /*********************/
-function new_player_added(player_id){
-  msg("new player with player_id " + player_id + " added to the game");
+function new_player_added(username){
+  msg("new player <" + username + "> added to the game");
+}
+function player_offline(username){
+  msg("player <" + username + "> disconnected");
 }
 /*********************/
 
 // WebSocket
+function dv_get_string(dv, offset){
+  len = dv.getInt32(offset);
+  ret = "";
+  for(i=0;i<len;++i){
+    ret += String.fromCharCode(dv.getInt8(offset+4+i));
+  }
+  return ret;
+}
+
 function start_game(){
   document.getElementById('button_start_game').disabled=true;
   var server_address = document.getElementById('input_server_address').value;
@@ -54,7 +66,13 @@ function start_game(){
     command = dv.getInt32(0);
     switch(command){
       case 0:
-        player_name_length = dv.getUint32(4);
+        username = dv_get_string(dv, 4);
+        new_player_added(username);
+        break;
+      case 1:
+        username = dv_get_string(dv, 4);
+        player_offline(username);
+        break;
     }
   };
 

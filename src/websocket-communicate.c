@@ -51,7 +51,7 @@
  *   frame -- return value, frame data received
  *   frame_len_ptr -- return value, length of received frame data, not set if NULL
  */
-void websocket_receive_frame(int fd, byte *buff, int *buff_len_ptr, byte *frame, int *frame_len_ptr){
+int websocket_receive_frame(int fd, byte *buff, int *buff_len_ptr, byte *frame, int *frame_len_ptr){
 	int buff_len = *buff_len_ptr;
 	
 	int frame_len = 0, fin, opcode, mask, payload_len, offset;
@@ -132,6 +132,9 @@ void websocket_receive_frame(int fd, byte *buff, int *buff_len_ptr, byte *frame,
 
 	*buff_len_ptr = buff_len;
 	if(frame_len_ptr) *frame_len_ptr= frame_len;
+
+	if(opcode == 8) return 1; // connection close
+	else return 0;
 }
 
 /*
