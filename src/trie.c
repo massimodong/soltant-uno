@@ -84,3 +84,16 @@ void *trie_query(struct Trie *tr, const char *name){
 	}
 	return tr->value;
 }
+
+/*
+ * enumerate all elements in trie
+ * each execute foo
+ */
+void trie_enumerate(struct Trie *tr, void (*foo)(struct Trie *, void *), void *par){
+	if(tr->value){
+		foo(tr, par);
+	}
+	for(int d=0;d<TRIE_ALPBT_SIZE;++d) if(tr->go[d]){
+		trie_enumerate(tr->go[d], foo, par);
+	}
+}

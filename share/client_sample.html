@@ -33,6 +33,8 @@ function start_game(){
   var server_address = document.getElementById('input_server_address').value;
   var username = document.getElementById('input_username').value;
 
+  msg("starting game");
+
   if(server_address == ""){
     server_address = "ws://localhost:11111/game/255";
   }

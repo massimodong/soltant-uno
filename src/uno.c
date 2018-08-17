@@ -24,21 +24,34 @@
 /*
  * broadcast messages
  */
+void trie_dfs_send_message(struct Trie *tr, void *parp){
+	struct Par{
+		byte *buffer;
+		size_t len;
+	};
+	fprintf(stderr, "fd: %d\n", ((struct Player*)tr->value)->wb_client.fd);
+	websocket_send_binary(((struct Player*)tr->value)->wb_client.fd,
+	                      ((struct Par *)parp)->buffer,
+	                      ((struct Par *)parp)->len);
+}
+
 void broadcast(struct Game *game, byte *msg, size_t len){
-	/*
-	for(int i=0;i<game->players_cnt;++i){
-		websocket_send_binary(game->players[i].wb_client.fd, msg, len);
-	}*/
+	struct{
+		byte *buffer;
+		size_t len;
+	}par = {msg, len};
+	trie_enumerate(game->players, trie_dfs_send_message, &par);
 }
 
 /*
  * broadcast that a new player added
  */
-void broadcast_new_player(struct Game *game, int player_id){
-	byte buff[8];
+void broadcast_new_player(struct Game *game, const char *username){
+	byte buff[30];
 	*(uint32_t *)buff = htonl(0);
-	*(uint32_t *)(buff + 4) = htonl(player_id);
-	broadcast(game, buff, 8);
+	*(uint32_t *)(buff + 4) = htonl(strlen(username));
+	strcpy((char *)(buff + 8), username);
+	broadcast(game, buff, 8 + strlen(username));
 }
 
 /************* end of communication part *********/
@@ -49,16 +62,10 @@ void broadcast_new_player(struct Game *game, int player_id){
  *   game -- game struct
  */
 int game_new_player(struct Game *game, const char *username){
-	/*
-	if(game->players_size == game->players_cnt){
-		game->players_size += 1;
-		game->players_size *= 2;
-		game->players = realloc(game->players, sizeof(struct Player) * game->players_size);
-	}
-	int player_id = game->players_cnt++;
-	memset(game->players + player_id, 0, sizeof(struct Player));*/
 	struct Player *player = trie_query(game->players, username);
 	if(player != NULL) return 0;
+
+	broadcast_new_player(game, username);
 
 	player = malloc(sizeof(struct Player));
 	trie_insert(game->players, username, player);
@@ -134,8 +141,6 @@ void new_player(struct Game *game, const char *username, byte *par){
 	player->wb_client.fd = fd;
 	player->username = malloc(sizeof(char) * (USERNAME_MAX_SIZE + 1));
 	strcpy(player->username, username);
-
-	//broadcast_new_player(game, new_player_id);
 
 #ifndef NDEBUG
 	fprintf(stderr, "new Player: %s\n", username);

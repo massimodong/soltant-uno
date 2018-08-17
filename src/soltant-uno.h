@@ -50,9 +50,9 @@ extern int SERVER_PORT;
  * below are shared datatypes
  */
 #define byte unsigned char
-
+#define TRIE_ALPBT_SIZE 1<<8
 struct Trie{
-	 struct Trie *go[1<<8];
+	 struct Trie *go[TRIE_ALPBT_SIZE];
 	 void *value;
 };
 
@@ -103,6 +103,7 @@ struct Trie *newTrie();
 void delTrie(struct Trie *tr);
 void trie_insert(struct Trie *, const char *, void *);
 void *trie_query(struct Trie *, const char *);
+void trie_enumerate(struct Trie *, void (*foo)(struct Trie *, void *), void *);
 
 // http
 struct HttpHeader *newHttpHeader(char *);
