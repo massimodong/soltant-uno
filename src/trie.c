@@ -55,6 +55,7 @@ void delTrie(struct Trie *tr){
  */
 void trie_insert(struct Trie *tr, const char *name, void *value){
 	for(int i=0;name[i]!='\0';++i){
+		tr->size++;
 		int d=name[i];
 		if(tr->go[d] == NULL){
 			tr->go[d] = newTrie();
@@ -62,6 +63,7 @@ void trie_insert(struct Trie *tr, const char *name, void *value){
 
 		tr = tr->go[d];
 	}
+	tr->size++;
 	tr->value = value;
 }
 

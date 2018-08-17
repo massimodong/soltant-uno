@@ -52,14 +52,15 @@ extern int SERVER_PORT;
 #define byte unsigned char
 #define TRIE_ALPBT_SIZE 1<<8
 struct Trie{
-	 struct Trie *go[TRIE_ALPBT_SIZE];
-	 void *value;
+	struct Trie *go[TRIE_ALPBT_SIZE];
+	int size;
+	void *value;
 };
 
 struct HttpHeader{
-	 char *request_uri;
-	 char *method;
-	 struct Trie *fields, *get_params;
+	char *request_uri;
+	char *method;
+	struct Trie *fields, *get_params;
 };
 
 struct WebSocket_Client{
@@ -83,8 +84,9 @@ enum {
 };
 struct Game{
 	struct Trie *players;
+	struct Player **player_list;
 	int *deck, status, direction, cur_player;
-	size_t deck_size, deck_cnt;
+	size_t player_list_cnt, deck_size, deck_cnt;
 };
 
 /*

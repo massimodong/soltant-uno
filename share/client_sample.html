@@ -28,13 +28,22 @@ function new_player_added(username){
 function player_offline(username){
   msg("player <" + username + "> disconnected");
 }
+function game_started(players){
+  msg("game started! The players are")
+  players.forEach(function(item, index){
+    msg(index + ": <"+ item + ">");
+  });
+}
 /*********************/
 
 // WebSocket
+
+var wsoc;
+
 function dv_get_string(dv, offset){
   len = dv.getInt32(offset);
   ret = "";
-  for(i=0;i<len;++i){
+  for(var i=0;i<len;++i){
     ret += String.fromCharCode(dv.getInt8(offset+4+i));
   }
   return ret;
@@ -54,7 +63,7 @@ function start_game(){
     username = "noname";
   }
 
-  var wsoc = new WebSocket(server_address + "?username=" + username);
+  wsoc = new WebSocket(server_address + "?username=" + username);
 
   wsoc.binaryType = "arraybuffer";
 
@@ -73,6 +82,17 @@ function start_game(){
         username = dv_get_string(dv, 4);
         player_offline(username);
         break;
+      case 2:
+        player_list_cnt = dv.getInt32(4);
+        var players = [], offset = 8;
+        console.log("cnt: " + player_list_cnt);
+        for(var i=0;i<player_list_cnt;++i){
+          player = dv_get_string(dv, offset);
+          offset += 4 + player.length;
+          players.push(player);
+        }
+        game_started(players);
+        break;
     }
   };
 
@@ -84,6 +104,12 @@ function start_game(){
     msg("WebSocket closed!");
     document.getElementById('button_start_game').disabled=false;
   }
+}
+
+function command_start_game(){
+  dv = new DataView(new ArrayBuffer(4));
+  dv.setInt32(0, 11);
+  wsoc.send(dv);
 }
     </script>
   </body>

@@ -64,6 +64,22 @@ void broadcast_offline_player(struct Game *game, const char *username){
 	broadcast(game, buff, 8 + strlen(username));
 }
 
+void broadcast_player_list(struct Game *game){
+	byte *buff = malloc(game->player_list_cnt * (USERNAME_MAX_SIZE + 10));
+	*(uint32_t *)buff = htonl(2);
+	*(uint32_t *)(buff + 4) = htonl(game->player_list_cnt);
+	int offset = 8;
+	for(int i=0;i<game->player_list_cnt;++i){
+		char *username = game->player_list[i]->username;
+		*(int32_t *)(buff + offset) = htonl(strlen(username));
+		offset += 4;
+		strcpy((char *)(buff + offset), username);
+		offset += strlen(username);
+	}
+	broadcast(game, buff, offset);
+	free(buff);
+}
+
 /************* end of communication part *********/
 
 /*
@@ -79,22 +95,6 @@ int game_new_player(struct Game *game, const char *username){
 
 	player = malloc(sizeof(struct Player));
 	trie_insert(game->players, username, player);
-	return 1;
-}
-
-/*
- * determines if all the players are prepared
- * param:
- *   game -- game struct
- * return:
- *   0 or 1
- */
-int game_all_players_prepared(struct Game *game){
-	/*
-	for(int i=0;i<game->players_cnt;++i){
-		if(game->players[i].prepared == 0) return 0;
-	}
-	*/
 	return 1;
 }
 
@@ -116,11 +116,30 @@ void uno_add_deck(struct Game *game){
 	game->deck_cnt += CARDS_NUM;
 }
 
+void trie_dfs_add_players(struct Trie *tr, void *parp){
+	struct Par{
+		struct Player **list;
+		size_t *cnt;
+	};
+	((struct Par *)parp)->list[(*((struct Par *)parp)->cnt)++] = (struct Player *)tr->value;
+}
 /*
  * start a game.
  */
 void start_game(struct Game *game){
+	fprintf(stderr, "start game!\n");
 	game->status = UNO_STATUS_NORMAL;
+	game->player_list = malloc(sizeof(struct Player *)*(game->players->size));
+
+	struct{
+		struct Player **list;
+		size_t *cnt;
+	}par = {game->player_list, &game->player_list_cnt};
+	trie_enumerate(game->players, trie_dfs_add_players, &par);
+	rand_shuffle(game->player_list, game->player_list + game->player_list_cnt, sizeof(void *));
+	fprintf(stderr, "player_list_cnt: %lu\n", game->player_list_cnt);
+	broadcast_player_list(game);
+
 	game->direction = game->cur_player = 0;
 	uno_add_deck(game);
 }
@@ -230,6 +249,20 @@ void player_challenge_draw4_deny(struct Game *game, const char *username, byte *
 void player_challenge_draw4_accept(struct Game *game, const char *username, byte *par){
 }
 
+/*
+ * start the game if all players prepared
+ */
+void player_start_game(struct Game *game, const char *username, byte *par){
+	fprintf(stderr, "game status: %d\n", game->status);
+	switch(game->status){
+		case UNO_STATUS_WAITING:
+			start_game(game);
+			break;
+		default:
+			break;
+	}
+}
+
 /***************end of commands *********************/
 
 const void (*commands[])(struct Game *, const char*, byte *) = {
@@ -244,6 +277,7 @@ const void (*commands[])(struct Game *, const char*, byte *) = {
 	player_challenge_draw4,                // 8
 	player_challenge_draw4_deny,           // 9
 	player_challenge_draw4_accept,         // 10
+	player_start_game,                     // 11
 };
 
 /*
@@ -271,4 +305,5 @@ void uno_game_proceed(struct Game *game, const char *username, uint32_t command,
 void uno_init(struct Game *game){
 	memset(game, 0, sizeof(struct Game));
 	game->players = newTrie();
+	game->status = UNO_STATUS_WAITING;
 }
